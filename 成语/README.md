@@ -8,7 +8,7 @@ pip install -U fastdatasets
 ```python
 import json
 from fastdatasets.record import load_dataset, RECORD
-record_file = './tangsong.record'
+record_file = './成语.record'
 dataset = load_dataset.RandomDataset(record_file,options = RECORD.TFRecordOptions(compression_type='GZIP')).parse_from_numpy_writer()
 
 def poetry_parser(x):

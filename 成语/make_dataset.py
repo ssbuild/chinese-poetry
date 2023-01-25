@@ -100,7 +100,7 @@ if __name__ == '__main__':
     outfile = r'D:\nlpdata_2022\poetry_data\成语.json'
     process_shici(corpus_dir, outfile, file_suffix='.json')
 
-    outfile2 = r'D:\nlpdata_2022\poetry_data\成语.record'
+    outfile2 = './成语.record'
     convert2record([
         outfile,
     ], outfile2)
