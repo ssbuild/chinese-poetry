@@ -37,7 +37,8 @@ def process_common(corpus_dir, outfile, type, file_prefix=None, file_suffix=None
         'chapter': 'title',
         'paragraphs': 'paragraphs',
         'name': 'title',
-        'singer': 'author'
+        'singer': 'author',
+        'lyric': 'paragraphs'
     }
     for f in fs:
         f_in = open(f, mode='r', encoding='utf-8', newline='\n')
@@ -85,6 +86,7 @@ def process_common(corpus_dir, outfile, type, file_prefix=None, file_suffix=None
                                 break
 
                     if isinstance(v, list):
+                        v = [i.strip() for i in v if len(i.strip()) > 0]
                         v = [convert(i, 'zh-cn') for i in v]
                     else:
                         v = convert(v, 'zh-cn')
