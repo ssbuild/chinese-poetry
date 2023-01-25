@@ -4,7 +4,7 @@
 # @FileName: make_dataset.py
 import json
 import os
-
+import pandas as pd
 import numpy as np
 from fastdatasets.record import RECORD, NumpyWriter
 
@@ -18,21 +18,12 @@ def process_shici(corpus_dir, outfile, file_suffix='.csv'):
 
     map_nums = {}
     for fname in fs:
-        with open(fname, mode='r', encoding='utf-8', newline='\n') as f:
-            lines = f.readlines()
-        for line in lines[1:]:
-            line = line.replace('\r\n', '').replace('\n', '')
-            if not line:
-                continue
+        df = pd.read_csv(fname,sep=',')
+        for title,dynasty,author,content in zip(df['题目'],df['朝代'],df['作者'],df['内容']):
 
             num += 1
             content: str
-            arr = line.split(',', 3)
-            if len(arr) != 4:
-                print(fname, line, arr)
-                continue
-            arr = [_.strip('"') for _ in arr]
-            title, dynasty, author, content = arr
+
 
             o = {}
             o['title'] = title
@@ -77,20 +68,20 @@ def convert2record(src_list, dst):
 if __name__ == '__main__':
     # 唐诗宋词
     corpus_dir = r'D:\nlpdata_2023\Poetry\唐宋'
-    outfile = r'D:\nlpdata_2022\poetry_data\poetry_80w_part1.json'
+    outfile = r'D:\nlpdata_2022\poetry_data\poetry_85w_part1.json'
     process_shici(corpus_dir, outfile)
 
-    outfile2 = './poetry_80w_part1.record'
+    outfile2 = './poetry_85w_part1.record'
     convert2record([
         outfile,
     ], outfile2)
 
     # 元明清近现代
     corpus_dir = r'D:\nlpdata_2023\Poetry\元明清近现代'
-    outfile = r'D:\nlpdata_2022\poetry_data\poetry_80w_part2.json'
+    outfile = r'D:\nlpdata_2022\poetry_data\poetry_85w_part2.json'
     process_shici(corpus_dir, outfile)
 
-    outfile2 = './poetry_80w_part2.record'
+    outfile2 = './poetry_85w_part2.record'
     convert2record([
         outfile,
     ], outfile2)

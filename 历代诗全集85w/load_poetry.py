@@ -6,7 +6,7 @@ import json
 
 from fastdatasets.record import load_dataset, RECORD
 
-record_file = ['./poetry_80w_part1.record ','./poetry_80w_part2.record ']
+record_file = ['./poetry_85w_part1.record ','./poetry_85w_part2.record ']
 dataset = load_dataset.RandomDataset(record_file,
                                      options=RECORD.TFRecordOptions(compression_type='GZIP')).parse_from_numpy_writer()
 
