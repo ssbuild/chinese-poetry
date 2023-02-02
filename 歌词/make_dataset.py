@@ -7,9 +7,79 @@ import json
 import os
 
 import numpy as np
+import unicodedata
 from fastdatasets.record import RECORD, NumpyWriter
 from zhconv import convert
 
+def B2Q(uchar):
+    """单个字符 半角转全角"""
+    inside_code = ord(uchar)
+    if inside_code < 0x0020 or inside_code > 0x7e: # 不是半角字符就返回原来的字符
+        return uchar
+    if inside_code == 0x0020: # 除了空格其他的全角半角的公式为: 半角 = 全角 - 0xfee0
+        inside_code = 0x3000
+    else:
+        inside_code += 0xfee0
+    return chr(inside_code)
+
+def Q2B(uchar):
+    """单个字符 全角转半角"""
+    inside_code = ord(uchar)
+    if inside_code == 0x3000:
+        inside_code = 0x0020
+    else:
+        inside_code -= 0xfee0
+    if inside_code < 0x0020 or inside_code > 0x7e: #转完之后不是半角字符返回原来的字符
+        return uchar
+    return chr(inside_code)
+
+
+def stringQ2B(ustring):
+    """把字符串全角转半角"""
+    return "".join([Q2B(uchar) for uchar in ustring])
+
+def is_chinese(uchar):
+    """判断一个unicode是否是汉字"""
+    if uchar >= u'\u4e00' and uchar<=u'\u9fa5':
+        return True
+    else:
+        return False
+
+
+def is_number(uchar):
+    """判断一个unicode是否是半角数字"""
+    if uchar >= u'\u0030' and uchar <= u'\u0039':
+        return True
+    else:
+        return False
+
+
+def is_Qnumber(uchar):
+    """判断一个unicode是否是全角数字"""
+    if uchar >= u'\uff10' and uchar <= u'\uff19':
+        return True
+    else:
+        return False
+
+
+def is_alphabet(uchar):
+    """判断一个unicode是否是半角英文字母"""
+    if (uchar >= u'\u0041' and uchar <= u'\u005a') or (uchar >= u'\u0061' and uchar <= u'\u007a'):
+        return True
+    else:
+        return False
+
+
+def is_Qalphabet(uchar):
+    """判断一个unicode是否是全角英文字母"""
+    if (uchar >= u'\uff21' and uchar <= u'\uff3a') or (uchar >= u'\uff41' and uchar <= u'\uff5a'):
+        return True
+    else:
+        return False
+
+def stringpartQ2B(ustring):
+    """把字符串中数字和字母全角转半角"""
+    return "".join([Q2B(uchar) if is_Qnumber(uchar) or is_Qalphabet(uchar) else uchar for uchar in ustring])
 
 def process_common(corpus_dir, outfile, type, file_prefix=None, file_suffix=None, file_extra=None):
     fs = os.listdir(corpus_dir)
@@ -65,26 +135,9 @@ def process_common(corpus_dir, outfile, type, file_prefix=None, file_suffix=None
                 keep_keys.pop('chapter', None)
 
             is_ignore = False
-            muti_instance = None
             for k2 in keep_keys.keys() & jd.keys():
                 try:
                     v = jd[k2]
-                    if isinstance(v, list):
-                        if len(v) == 0:
-                            is_ignore = True
-                            break
-                        if isinstance(v[0], dict):
-                            if 'paragraphs' in v[0]:
-                                muti_instance_tmp = [paragraphs_objs['paragraphs'] for paragraphs_objs in v]
-                                muti_instance = []
-                                for paragraphs in muti_instance_tmp:
-                                    muti_instance.append([convert(i, 'zh-cn') for i in paragraphs])
-                                continue
-                            else:
-                                is_ignore = True
-                                print(jd)
-                                break
-
                     if isinstance(v, list):
                         v = [i.strip() for i in v if len(i.strip()) > 0]
                         v = [convert(i, 'zh-cn') for i in v]
@@ -95,19 +148,27 @@ def process_common(corpus_dir, outfile, type, file_prefix=None, file_suffix=None
                     print(k2, f)
                     print(jd)
                     raise e
+            if o['title'] == '万万没想到':
+                is_ignore = True
+
             if not is_ignore:
-                if muti_instance is not None:
-                    tmp_title = ['其一', '其二', '其三', '其四', '其五', '其六', '其七']
-                    for sub_title, paragraphs in zip(tmp_title, muti_instance_tmp):
-                        tmp_o = copy.deepcopy(o)
-                        tmp_o['paragraphs'] = paragraphs
-                        if 'title' in tmp_o:
-                            tmp_o['title'] += sub_title
-                        num += 1
-                        f_out.write(json.dumps(tmp_o, ensure_ascii=False) + '\n')
-                else:
-                    num += 1
-                    f_out.write(json.dumps(o, ensure_ascii=False) + '\n')
+                paragraphs = o['paragraphs']
+                x = ','.join(paragraphs)
+                x = x.replace(',,', '。')
+                x = stringpartQ2B(x)
+                x = unicodedata.normalize('NFKC', x)
+                x = x.replace('\ufeff,','')
+                o['paragraphs'] = x.split('。')
+
+                x = o['title']
+                x = stringpartQ2B(x)
+                x = unicodedata.normalize('NFKC', x)
+                x = x.replace('\ufeff,', '')
+                o['title'] = x
+
+                num += 1
+                print(o)
+                f_out.write(json.dumps(o, ensure_ascii=False) + '\n')
 
     print(type, num)
     f_out.close()
@@ -138,8 +199,8 @@ def convert2record(src_list, dst):
 
 if __name__ == '__main__':
     # 对联
-    corpus_dir = r'D:\nlpdata_2023\ChineseLyrics'
-    outfile = r'D:\nlpdata_2022\poetry_data\歌词.json'
+    corpus_dir = r'F:\nlpdata_2023\ChineseLyrics'
+    outfile = r'F:\nlpdata_2022\poetry_data\歌词.json'
     process_common(corpus_dir, outfile, type='歌词', file_suffix='.json')
 
     outfile_record = './歌词.record'

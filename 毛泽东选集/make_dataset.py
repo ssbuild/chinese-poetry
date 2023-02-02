@@ -46,7 +46,7 @@ def process_shici(corpus_dir, outfile, file_suffix='.csv'):
 
         pos = text.find('##')
         text = text[pos + 2:]
-        result = re.split(re.compile('##'), text, re.MULTILINE)
+        paragraphs = re.split(re.compile('##'), text, re.MULTILINE)
 
 
 
@@ -54,17 +54,24 @@ def process_shici(corpus_dir, outfile, file_suffix='.csv'):
         date = date.strip()
         backgroud = backgroud.replace('>', '').strip()
 
+        paragraphs_new = []
+        for item in paragraphs:
+            paragraphs_new.extend(item.split('\n'))
+
+        paragraphs = [_.strip() for _ in paragraphs_new if _.strip()]
+        paragraphs = [_.replace('\u3000','').replace('(./目录.md)','') for _ in paragraphs]
 
 
         num += 1
         o = {}
         o['title'] = title
         o['backgroud'] = backgroud
-        o['paragraphs'] = result
+        o['paragraphs'] = paragraphs
         o['type'] = '毛泽东选集'
         o['note'] = note
         o['date'] = date
 
+        print(paragraphs)
         f_out.write(json.dumps(o, ensure_ascii=False) + '\n')
 
     print(num)
@@ -96,8 +103,8 @@ def convert2record(src_list, dst):
 
 if __name__ == '__main__':
     # 唐诗宋词
-    corpus_dir = r'D:\nlpdata_2023\MaoZeDongAnthology\src'
-    outfile = r'D:\nlpdata_2022\poetry_data\毛泽东选集.json'
+    corpus_dir = r'F:\nlpdata_2023\MaoZeDongAnthology\src'
+    outfile = r'F:\nlpdata_2022\poetry_data\毛泽东选集.json'
     process_shici(corpus_dir, outfile, file_suffix='.md')
 
     outfile2 = './毛泽东选集.record'
