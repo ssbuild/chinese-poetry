@@ -16,8 +16,13 @@ def poetry_parser(x):
 dataset = dataset.map(poetry_parser)
 
 print('total', len(dataset))
+
+
+
+
 for i in range(len(dataset)):
     d = dataset[i]
+
     print(d)
     if i > 3:
         break
